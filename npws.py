@@ -1,6 +1,8 @@
+from __future__ import annotations
 import sqlite3
 import typemap
 
+auto_commit = False
 
 def dict_factory(cursor, row):
     fields = [column[0] for column in cursor.description]
@@ -100,7 +102,15 @@ class Table:
         pass
     # selections/fetches
     ## TODO: Implement TableItem orm component into the fetch functions
-    def fetch_one(self, query):
+    def get_item_one(self, key:str, value:str) -> TableItem: #do not give a user provided key, why would you ever ever ever want that
+        pass
+        if key not in self.schema.columns:
+            raise ValueError(f"Invalid column name: {key}")
+        self.cursor.execute(f"SELECT * FROM {self.tableName} WHERE {key}=?",(value,))
+        results = self.cursor.fetchone()
+        item = TableItem(self,results)
+        return item
+    def fetch_one(self, query) -> dict:
         self.cursor.execute(query)
         return self.cursor.fetchone()
 
@@ -119,22 +129,28 @@ class Table:
         self.cursor.execute(f"SELECT * FROM {self.tableName} WHERE {key}=?",(value,))
         results = self.cursor.fetchall()
         return results
-    def update(self,primary_key,column,value):
-        self.cursor.execute(f"UPDATE {self.tableName} SET {column} = (?) WHERE {self.schema.primary_key} = {primary_key}")
-    def delete(self):
-        self.cursor.execute(f"DROP TABLE {self.tableName}")
+    # rethinking adding a function to drop a table, super dangerous!
+    # def delete(self):
+    #     self.cursor.execute(f"DROP TABLE {self.tableName}")
 
-class TableItem: #Do not instantiate, only to be spawned by Table
-    def __init__(self,values: dict[str,any]):
+class TableItem: #Do not instantiate, intended to only to be spawned by Table
+    def __init__(self,parent : Table, values: dict[str,any]):
         self.values : dict[str,any] = values
-        self.parent : Table = None
+        self.parent : Table = parent
+        self.validate()
     def validate(self):
+        if self.parent == None or self.values == None:
+            raise ValueError("Cannot validate, one or more attributes are None")
         global validate_values_against_schema
-        validate_values_against_schema(self.values,self.parent.schema)
-    def __setattr__(self, name, value):
-        if hasattr(self, name):
-            object.__setattr__(self, name, value)
-            return
+        result = validate_values_against_schema(self.values,self.parent.schema)
+        if not result:
+            raise TypeError("Values of tableitem do not properly map to the schema")
+        return self.validate()
+    def get_primary_key(self) -> str:
+        return self.values.get(self.parent.schema.primary_key)
+    def update(self,column:str,value:any):
+        self.parent.cursor.execute(f"UPDATE {self.parent.tableName} SET {column} = (?) WHERE {self.parent.schema.primary_key} = {self.get_primary_key()}",(value,))
+        self.values[column] = self.values 
 
 def typify(dictionary:dict): # maps a dictionary to store its old value's types instead of the values themselves
     dictionary=dictionary.copy()
@@ -145,10 +161,10 @@ def validate_values_against_schema(values,schema:dict|TableSchema):
     # TableSchema degrades into just its columns value
     if isinstance(schema,TableSchema):
         schema = schema.columns
-    if not isinstance(schema,dict[str,any]):
-        raise TypeError("Passed value has malformed structure, not dict[str,any]")
+    if not isinstance(schema,dict):
+        raise TypeError("Passed value is not dict")
     typed_values = typify(values)
-    return values == schema
+    return typed_values == schema
 
 if __name__ == "__main__":
     guysSchema = TableSchema(
@@ -162,8 +178,8 @@ if __name__ == "__main__":
     )
     db = Connection("test_database.db")
     the = db.getTable(coolSchema, True)
-    # the.insert("andrew", 0.1, 67)
-    value_andy = the.fetch_one_XforY("fav_number",67)
-    typed_andy = typify(value_andy)
-    print(the.schema.columns==typed_andy)
+    the.insert("andrew", 0.1, 67)
+    item = the.get_item_one("fav_number",67)
+    item.update("star_rating",4.4)
+    db.commit()
 
