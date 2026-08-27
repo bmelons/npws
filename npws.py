@@ -157,7 +157,7 @@ if __name__ == "__main__":
     coolSchema = TableSchema(
         "bumbling_buffoons", # we have fun here
         boys_name="TEXT PRIMARY KEY",
-        poop_flavor_rating="REAL",
+        star_rating="REAL",
         fav_number="INTEGER",
     )
     db = Connection("test_database.db")
