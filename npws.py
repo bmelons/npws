@@ -145,7 +145,7 @@ class TableItem: #Do not instantiate, intended to only to be spawned by Table
         result = validate_values_against_schema(self.values,self.parent.schema)
         if not result:
             raise TypeError("Values of tableitem do not properly map to the schema")
-        return self.validate()
+        return result
     def get_primary_key(self) -> str:
         return self.values.get(self.parent.schema.primary_key)
     def update(self,column:str,value:any):
