@@ -160,7 +160,7 @@ if __name__ == "__main__":
         poop_flavor_rating="REAL",
         fav_number="INTEGER",
     )
-    db = Connection("fart.db")
+    db = Connection("test_database.db")
     the = db.getTable(coolSchema, True)
     # the.insert("andrew", 0.1, 67)
     value_andy = the.fetch_one_XforY("fav_number",67)
