@@ -139,9 +139,9 @@ class TableItem: #Do not instantiate, intended to only to be spawned by Table
         self.parent : Table = parent
         self.validate()
     def validate(self):
+        global validate_values_against_schema
         if self.parent == None or self.values == None:
             raise ValueError("Cannot validate, one or more attributes are None")
-        global validate_values_against_schema
         result = validate_values_against_schema(self.values,self.parent.schema)
         if not result:
             raise TypeError("Values of tableitem do not properly map to the schema")
