@@ -1,3 +1,4 @@
+#!/opt/homebrew/Caskroom/miniforge/base/bin/python
 from __future__ import annotations
 import sqlite3
 import typemap
@@ -110,6 +111,13 @@ class Table:
         results = self.cursor.fetchone()
         item = TableItem(self,results)
         return item
+    def get_items(self):
+        self.cursor.execute(f"SELECT * FROM {self.tableName}")
+        rows = self.cursor.fetchall()
+        items = []
+        for row in rows:
+            items.append(TableItem(self,row))
+        return items
     def fetch_one(self, query) -> dict:
         self.cursor.execute(query)
         return self.cursor.fetchone()
@@ -167,6 +175,7 @@ def validate_values_against_schema(values,schema:dict|TableSchema):
     return typed_values == schema
 
 if __name__ == "__main__":
+    print("Running NPWS main tests")
     guysSchema = TableSchema(
         "tries", user_id="INTEGER PRIMARY KEY", name="TEXT", favNum="INTEGER"
     )
